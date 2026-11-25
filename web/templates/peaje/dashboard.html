@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Peaje Inteligente</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+
+body {
+    background: #f1f5f9;
+    font-family: Arial, sans-serif;
+    color: #1e293b;
+}
+
+.sidebar {
+    width: 245px;
+    height: 100vh;
+    position: fixed;
+    background: #0f172a;
+    color: white;
+    padding: 25px 18px;
+    overflow-y: auto;
+}
+
+.sidebar h4 {
+    font-weight: bold;
+}
+
+.sidebar a {
+    color: #cbd5e1;
+    display: block;
+    padding: 13px;
+    margin: 5px 0;
+    text-decoration: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.sidebar a:hover {
+    background: #334155;
+    color: white;
+}
+
+.main {
+    margin-left: 245px;
+    padding: 28px;
+}
+
+.panel {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 12px #00000008;
+}
+
+.stat {
+    background: white;
+    padding: 22px;
+    border-radius: 14px;
+    border-left: 4px solid #2563eb;
+    height: 100%;
+}
+
+.stat h2 {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.stat small {
+    color: #64748b;
+}
+
+.seccion {
+    display: none;
+}
+
+.seccion.activa {
+    display: block;
+}
+
+.chat-box {
+    height: 320px;
+    overflow-y: auto;
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.mensaje {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+}
+
+.bot {
+    background: #e2e8f0;
+}
+
+.user {
+    background: #dbeafe;
+    text-align: right;
+}
+
+#preview {
+    max-width: 100%;
+    max-height: 350px;
+    border-radius: 10px;
+}
+
+table {
+    font-size: 14px;
+}
+
+@media(max-width: 768px) {
+
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+
+    .main {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+    <h4>
+        <i class="bi bi-car-front-fill"></i>
+        Peaje IA
+    </h4>
+
+    <small class="text-secondary">
+        Sistema inteligente
+    </small>
+
+    <hr>
+
+    <a onclick="mostrar('dashboard')">
+        <i class="bi bi-speedometer2"></i>
+        Dashboard
+    </a>
+
+    <a onclick="mostrar('procesamiento')">
+        <i class="bi bi-camera-video"></i>
+        Control vehicular
+    </a>
+
+    <a onclick="mostrar('vehiculos'); cargarVehiculos()">
+        <i class="bi bi-car-front"></i>
+        Vehículos
+    </a>
+
+    <a onclick="mostrar('historial')">
+        <i class="bi bi-clock-history"></i>
+        Historial
+    </a>
+
+    <a onclick="mostrar('alertas')">
+        <i class="bi bi-bell"></i>
+        Alertas
+    </a>
+
+    <a onclick="mostrar('chat')">
+        <i class="bi bi-robot"></i>
+        Agente inteligente
+    </a>
+
+    <a onclick="mostrar('inferencia'); verificarAPI()">
+        <i class="bi bi-cpu"></i>
+        Estado de inferencia
+    </a>
+
+    {% if request.user.rol == "admin" %}
+
+    <a href="/admin/">
+        <i class="bi bi-gear"></i>
+        Administración
+    </a>
+
+    {% endif %}
+
+    <a href="/api/docs/" target="_blank">
+        <i class="bi bi-code-slash"></i>
+        Documentación API
+    </a>
+
+    <hr>
+
+    <small>{{ request.user.nombre }}</small>
+
+    <p class="text-info">
+        {{ request.user.rol|upper }}
+    </p>
+
+    <form action="/logout/" method="post">
+
+        {% csrf_token %}
+
+        <button class="btn btn-outline-light w-100">
+            Cerrar sesión
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="main">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+
+        <h3>Sistema Inteligente de Peaje</h3>
+
+        <span class="text-secondary">
+            Control vehicular mediante IA
+        </span>
+
+    </div>
+
+    <span id="conexion" class="badge bg-secondary">
+        Conectando...
+    </span>
+
+</div>
+
+
+<!-- DASHBOARD -->
+
+<section id="dashboard" class="seccion activa">
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+        <div class="stat">
+            <small>Pasos de hoy</small>
+            <h2 id="total">0</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat">
+            <small>Recaudación de hoy</small>
+            <h2 id="recaudacion">Bs 0</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat">
+            <small>Vehículos registrados</small>
+            <h2 id="cantidadVehiculos">0</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat">
+            <small>Alertas pendientes</small>
+            <h2 id="cantidadAlertas" class="text-danger">0</h2>
+        </div>
+    </div>
+
+</div>
+
+<div class="panel">
+
+    <h5>Últimos pasos vehiculares</h5>
+
+    <div class="table-responsive">
+
+    <table class="table table-hover">
+
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Categoría</th>
+                <th>Ejes</th>
+                <th>Caseta</th>
+                <th>Monto</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaDashboard"></tbody>
+
+    </table>
+
+    </div>
+
+</div>
+
+</section>
+
+
+<!-- PROCESAMIENTO -->
+
+<section id="procesamiento" class="seccion">
+
+<div class="panel">
+
+    <h4>Control vehicular mediante IA</h4>
+
+    <form id="formFrame">
+
+        <label class="form-label mt-3">Caseta</label>
+
+        <select name="caseta_id" class="form-select">
+
+            {% for caseta in casetas %}
+
+            <option value="{{ caseta.id }}">
+                {{ caseta.nombre }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+        <label class="form-label mt-3">
+            Imagen del vehículo
+        </label>
+
+        <input
+            type="file"
+            name="imagen"
+            id="imagen"
+            accept="image/*"
+            class="form-control"
+            required
+        >
+
+        <img id="preview" class="mt-3">
+
+        <br>
+
+        <button id="btnProcesar" class="btn btn-primary mt-3">
+            Procesar vehículo
+        </button>
+
+    </form>
+
+</div>
+
+<div class="panel">
+
+    <h5>Resultado de inferencia</h5>
+
+    <pre id="resultado">Esperando imagen...</pre>
+
+</div>
+
+</section>
+
+
+<!-- VEHICULOS -->
+
+<section id="vehiculos" class="seccion">
+
+<div class="panel">
+
+    <h4>Vehículos registrados</h4>
+
+    {% if request.user.rol == "admin" %}
+
+    <a href="/admin/peaje/vehiculo/add/" class="btn btn-primary mb-3">
+        Registrar vehículo
+    </a>
+
+    {% endif %}
+
+    <div class="table-responsive">
+
+    <table class="table table-hover">
+
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Propietario</th>
+                <th>Categoría</th>
+                <th>Ejes</th>
+                <th>Saldo</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaVehiculos"></tbody>
+
+    </table>
+
+    </div>
+
+</div>
+
+</section>
+
+
+<!-- HISTORIAL -->
+
+<section id="historial" class="seccion">
+
+<div class="panel">
+
+    <h4>Historial de pasos</h4>
+
+    <div class="table-responsive">
+
+    <table class="table table-hover">
+
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Categoría</th>
+                <th>Ejes</th>
+                <th>Caseta</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Evidencia</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaHistorial"></tbody>
+
+    </table>
+
+    </div>
+
+</div>
+
+</section>
+
+
+<!-- ALERTAS -->
+
+<section id="alertas" class="seccion">
+
+<div class="panel">
+
+    <h4>Alertas del sistema</h4>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Tipo</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaAlertas"></tbody>
+
+    </table>
+
+</div>
+
+</section>
+
+
+<!-- AGENTE -->
+
+<section id="chat" class="seccion">
+
+<div class="panel">
+
+    <h4>
+        <i class="bi bi-robot"></i>
+        Agente inteligente
+    </h4>
+
+    <div class="chat-box" id="chatBox">
+
+        <div class="mensaje bot">
+            Hola. Escribe una placa o envía una fotografía para consultar los registros del sistema.
+        </div>
+
+    </div>
+
+    <form id="formChat" class="mt-3">
+
+        <input
+            name="mensaje"
+            id="mensaje"
+            class="form-control"
+            placeholder="Ejemplo: Consulta la placa 1234ABC"
+        >
+
+        <input
+            type="file"
+            name="imagen"
+            id="imagenChat"
+            accept="image/*"
+            class="form-control mt-2"
+        >
+
+        <button class="btn btn-primary mt-2">
+            Enviar consulta
+        </button>
+
+    </form>
+
+</div>
+
+</section>
+
+
+<!-- INFERENCIA -->
+
+<section id="inferencia" class="seccion">
+
+<div class="panel">
+
+    <h4>Estado del servidor de inferencia</h4>
+
+    <button class="btn btn-primary mb-3" onclick="verificarAPI()">
+        Verificar conexión
+    </button>
+
+    <pre id="estadoAPI">Consultando...</pre>
+
+</div>
+
+</section>
+
+</div>
+
+
+<script>
+
+const csrf = document.querySelector(
+    '[name=csrfmiddlewaretoken]'
+).value;
+
+const esAdmin = "{{ request.user.rol }}" === "admin";
+
+function esc(valor) {
+
+    const div = document.createElement("div");
+
+    div.textContent = valor ?? "";
+
+    return div.innerHTML
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+}
+
+function mostrar(id) {
+
+    document.querySelectorAll(".seccion").forEach(
+        elemento => elemento.classList.remove("activa")
+    );
+
+    document.getElementById(id).classList.add("activa");
+
+}
+
+async function api(url, opciones = {}) {
+
+    const respuesta = await fetch(url, {
+
+        ...opciones,
+
+        headers: {
+            "X-CSRFToken": csrf,
+            ...(opciones.headers || {})
+        }
+
+    });
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+        throw new Error(JSON.stringify(datos));
+    }
+
+    return datos;
+
+}
+
+function etiqueta(estado) {
+
+    const color = estado === "aprobado"
+        ? "success"
+        : estado === "revision"
+        ? "warning"
+        : "danger";
+
+    return `<span class="badge bg-${color}">
+        ${esc(estado)}
+    </span>`;
+
+}
+
+function filasPasos(pasos, evidencia = false) {
+
+    return pasos.map(p => `
+
+        <tr>
+
+            <td>${esc(p.placa_normalizada || "Sin placa")}</td>
+
+            <td>${esc(p.categoria_detectada || "-")}</td>
+
+            <td>${esc(p.ejes_detectados ?? "-")}</td>
+
+            <td>${esc(p.nombre_caseta)}</td>
+
+            <td>Bs ${esc(p.monto)}</td>
+
+            <td>${etiqueta(p.estado)}</td>
+
+            ${evidencia ? `
+                <td>
+                    ${p.imagen_url
+                        ? `<a href="${esc(p.imagen_url)}" target="_blank">Ver imagen</a>`
+                        : "-"}
+                </td>
+            ` : ""}
+
+        </tr>
+
+    `).join("");
+
+}
+
+
+// TIEMPO REAL
+
+const eventos = new EventSource("/eventos/");
+
+eventos.onopen = function() {
+
+    const elemento = document.getElementById("conexion");
+
+    elemento.className = "badge bg-success";
+
+    elemento.textContent = "Tiempo real conectado";
+
+};
+
+eventos.onerror = function() {
+
+    const elemento = document.getElementById("conexion");
+
+    elemento.className = "badge bg-danger";
+
+    elemento.textContent = "Reconectando...";
+
+};
+
+eventos.onmessage = function(evento) {
+
+    const datos = JSON.parse(evento.data);
+
+    document.getElementById("total").textContent = datos.total;
+
+    document.getElementById("recaudacion").textContent =
+        "Bs " + datos.recaudacion.toFixed(2);
+
+    document.getElementById("cantidadVehiculos").textContent =
+        datos.vehiculos;
+
+    document.getElementById("cantidadAlertas").textContent =
+        datos.alertas;
+
+    document.getElementById("tablaDashboard").innerHTML =
+        filasPasos(datos.pasos.slice(0, 10));
+
+    document.getElementById("tablaHistorial").innerHTML =
+        filasPasos(datos.pasos, true);
+
+    document.getElementById("tablaAlertas").innerHTML =
+        datos.lista_alertas.map(a => `
+
+            <tr>
+
+                <td>${esc(a.placa || "-")}</td>
+
+                <td>${etiqueta(a.tipo)}</td>
+
+                <td>${esc(new Date(a.created_at).toLocaleString())}</td>
+
+                <td>${a.atendida ? "Atendida" : "Pendiente"}</td>
+
+                <td>
+
+                    ${esAdmin && !a.atendida
+                        ? `<button class="btn btn-sm btn-success"
+                            onclick="atender(${Number(a.id)})">
+                            Atender
+                           </button>`
+                        : "-"}
+
+                </td>
+
+            </tr>
+
+        `).join("");
+
+};
+
+
+// PROCESAMIENTO
+
+document.getElementById("imagen").onchange = function() {
+
+    if (this.files.length) {
+
+        document.getElementById("preview").src =
+            URL.createObjectURL(this.files[0]);
+
+    }
+
+};
+
+document.getElementById("formFrame").onsubmit = async function(e) {
+
+    e.preventDefault();
+
+    const boton = document.getElementById("btnProcesar");
+
+    boton.disabled = true;
+
+    boton.textContent = "Procesando con IA...";
+
+    try {
+
+        const datos = await api("/api/v1/pasos/frame", {
+
+            method: "POST",
+
+            body: new FormData(this)
+
+        });
+
+        document.getElementById("resultado").textContent =
+            JSON.stringify(datos, null, 2);
+
+    } catch(error) {
+
+        document.getElementById("resultado").textContent =
+            error.message;
+
+    } finally {
+
+        boton.disabled = false;
+
+        boton.textContent = "Procesar vehículo";
+
+    }
+
+};
+
+
+// VEHICULOS
+
+async function cargarVehiculos() {
+
+    try {
+
+        const respuesta = await api("/api/v1/vehiculos/");
+
+        const datos = respuesta.results || respuesta;
+
+        document.getElementById("tablaVehiculos").innerHTML =
+            datos.map(v => `
+
+                <tr>
+
+                    <td>${esc(v.placa)}</td>
+
+                    <td>${esc(v.propietario)}</td>
+
+                    <td>${esc(v.categoria)}</td>
+
+                    <td>${esc(v.ejes)}</td>
+
+                    <td>Bs ${esc(v.saldo)}</td>
+
+                    <td>
+
+                        ${esAdmin
+                            ? `<a class="btn btn-sm btn-outline-primary"
+                                href="/admin/peaje/vehiculo/${Number(v.id)}/change/">
+                                Editar
+                               </a>`
+                            : "-"}
+
+                    </td>
+
+                </tr>
+
+            `).join("");
+
+    } catch(error) {
+
+        alert(error.message);
+
+    }
+
+}
+
+
+// ALERTAS
+
+async function atender(id) {
+
+    try {
+
+        await api(`/api/v1/alertas/${id}/atender`, {
+
+            method: "POST"
+
+        });
+
+    } catch(error) {
+
+        alert(error.message);
+
+    }
+
+}
+
+
+// CHAT
+
+function agregarMensaje(texto, clase) {
+
+    const caja = document.getElementById("chatBox");
+
+    const mensaje = document.createElement("div");
+
+    mensaje.className = "mensaje " + clase;
+
+    mensaje.textContent = texto;
+
+    caja.appendChild(mensaje);
+
+    caja.scrollTop = caja.scrollHeight;
+
+}
+
+document.getElementById("formChat").onsubmit = async function(e) {
+
+    e.preventDefault();
+
+    const mensaje = document.getElementById("mensaje");
+
+    const imagen = document.getElementById("imagenChat");
+
+    if (!mensaje.value.trim() && !imagen.files.length) {
+        return;
+    }
+
+    const formulario = new FormData(this);
+
+    agregarMensaje(
+        mensaje.value || "Imagen de placa enviada",
+        "user"
+    );
+
+    try {
+
+        const datos = await api("/api/v1/agente/chat", {
+
+            method: "POST",
+
+            body: formulario
+
+        });
+
+        agregarMensaje(datos.respuesta, "bot");
+
+    } catch(error) {
+
+        agregarMensaje(error.message, "bot");
+
+    }
+
+    this.reset();
+
+};
+
+
+// ESTADO DE INFERENCIA
+
+async function verificarAPI() {
+
+    try {
+
+        const datos = await api("/api/v1/inferencia/estado");
+
+        document.getElementById("estadoAPI").textContent =
+            JSON.stringify(datos, null, 2);
+
+    } catch(error) {
+
+        document.getElementById("estadoAPI").textContent =
+            error.message;
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
