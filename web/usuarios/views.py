@@ -226,3 +226,20 @@ def google_api(request):
             {"error": "Token de Google inválido"},
             status=401
         )
+
+# DOCUMENTACION SWAGGER
+
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, OpenApiTypes
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    id_token = serializers.CharField()
+
+
+google_api = extend_schema(
+    summary="Iniciar sesion mediante Google",
+    request=GoogleLoginSerializer,
+    responses={200: OpenApiTypes.OBJECT},
+    auth=[],
+)(google_api)

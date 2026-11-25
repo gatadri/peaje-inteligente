@@ -6,7 +6,23 @@ from rest_framework.response import Response
 from peaje.services import consultar_placa
 from peaje.inferencia import consultar_inferencia
 
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, OpenApiTypes
 
+
+class ChatRequestSerializer(serializers.Serializer):
+    mensaje = serializers.CharField(
+        required=False,
+        allow_blank=True
+    )
+    imagen = serializers.ImageField(required=False)
+
+
+@extend_schema(
+    summary="Consultar al agente por texto o imagen",
+    request=ChatRequestSerializer,
+    responses={200: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 def chat(request):
 

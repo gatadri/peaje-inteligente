@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
 
-    "usuarios",
+    "usuarios.apps.UsuariosConfig",
     "peaje",
     "agente",
 ]

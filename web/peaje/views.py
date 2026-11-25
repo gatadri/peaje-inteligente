@@ -302,3 +302,41 @@ def atender_alerta(request, id):
     return Response({
         "mensaje": "Alerta atendida"
     })
+
+
+    # DOCUMENTACION SWAGGER
+
+from drf_spectacular.utils import extend_schema, OpenApiTypes
+
+consulta_placa_api = extend_schema(
+    summary="Consultar placa por texto",
+    request=ConsultaPlacaSerializer,
+    responses={200: OpenApiTypes.OBJECT},
+)(consulta_placa_api)
+
+consulta_imagen_api = extend_schema(
+    summary="Consultar placa mediante imagen",
+    request=ConsultaImagenSerializer,
+    responses={200: OpenApiTypes.OBJECT},
+)(consulta_imagen_api)
+
+historial_placa = extend_schema(
+    summary="Consultar historial vehicular",
+    responses={200: OpenApiTypes.OBJECT},
+)(historial_placa)
+
+resumen_caseta = extend_schema(
+    summary="Consultar recaudacion de caseta",
+    responses={200: OpenApiTypes.OBJECT},
+)(resumen_caseta)
+
+estado_api = extend_schema(
+    summary="Consultar estado de inferencia",
+    responses={200: OpenApiTypes.OBJECT},
+)(estado_api)
+
+atender_alerta = extend_schema(
+    summary="Marcar alerta como atendida",
+    request=None,
+    responses={200: OpenApiTypes.OBJECT},
+)(atender_alerta)
